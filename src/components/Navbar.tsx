@@ -1,19 +1,51 @@
 import React from "react";
 
 function Navbar() {
-    return ( 
-        <nav className="navbar">
-            <h1>The Dojo Blog</h1>
-            <div className="links">
-                <a href="/">Home</a>
-                <a href="/create" style={{
-                    color: "white",
-                    backgroundColor: "#f1356d",
-                    borderRadius: "8px"
-                }}>New Blog</a>
-            </div>
-        </nav>
-    );
+  return (
+    <div role="tablist" className="tabs tabs-lifted">
+      <input
+        type="radio"
+        name="my_tabs_2"
+        role="tab"
+        className="tab"
+        aria-label="Tab 1"
+      />
+      <div
+        role="tabpanel"
+        className="tab-content bg-base-100 border-base-300 rounded-box p-6"
+      >
+        Tab content 1
+      </div>
+
+      <input
+        type="radio"
+        name="my_tabs_2"
+        role="tab"
+        className="tab"
+        aria-label="Tab 2"
+      />
+      <div
+        role="tabpanel"
+        className="tab-content bg-base-100 border-base-300 rounded-box p-6"
+      >
+        Tab content 2
+      </div>
+
+      <input
+        type="radio"
+        name="my_tabs_2"
+        role="tab"
+        className="tab"
+        aria-label="Tab 3"
+      />
+      <div
+        role="tabpanel"
+        className="tab-content bg-base-100 border-base-300 rounded-box p-6"
+      >
+        Tab content 3
+      </div>
+    </div>
+  );
 }
 
 export default Navbar;
