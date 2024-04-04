@@ -1,11 +1,11 @@
 import React from "react";
-import Canvas from "../canvas/Canvas";
+import Graph from "../graph/Graph";
 
 function Home() {
   return (
-    <div>
-      {/* <h1 className="text-3xl font-bold">Home</h1> */}
-      <Canvas />
+    <div className="bg-base-100 w-full h-full">
+      <h1 className="text-3xl font-bold">Home</h1>
+      <Graph />
     </div>
   );
 }
