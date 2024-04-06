@@ -4,7 +4,7 @@ import Graph from "../graph/Graph";
 function Home() {
   return (
     <div className="bg-base-100 w-full h-full">
-      <h1 className="text-3xl font-bold">Home</h1>
+      <h1 className="text-3xl font-bold">fileWiz</h1>
       <Graph />
     </div>
   );
