@@ -1,24 +1,40 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const Graph: React.FC<object> = () => {
+  // state
   const [source, setSource] = useState<string>("");
+  const [results, setResults] = useState<string[]>([]);
+
+  // focus
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // add all initial setup here
+  useEffect(() => {
+    document.addEventListener("keydown", (event) => {
+      if (event.metaKey && event.key === "k") {
+        inputRef.current?.focus();
+      }
+    });
+  }, []);
+
+  // handlers
   const sourceHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSource(event.target.value);
   };
-  const [results, setResults] = useState<string[]>([]);
   const searchHandler = () => {
     window.fs.readdir(
       source,
-      (err: string, files: React.SetStateAction<string[]>) => {
+      (err: string, filePaths: React.SetStateAction<string[]>) => {
         if (err) {
           console.error(err);
           return;
         }
-        setResults(files);
+        setResults(filePaths);
       }
     );
   };
 
+  // render
   return (
     <div>
       <div className="flex justify-center">
@@ -29,6 +45,7 @@ const Graph: React.FC<object> = () => {
             placeholder="Source"
             value={source}
             onChange={sourceHandler}
+            ref={inputRef}
           />
           <kbd className="kbd kbd-sm">⌘</kbd>
           <kbd className="kbd kbd-sm">K</kbd>
