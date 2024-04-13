@@ -22,13 +22,14 @@ const Graph: React.FC<object> = () => {
     setSource(event.target.value);
   };
   const searchHandler = () => {
-    window.fs.readdir(
+    window.fileUtils.readdir(
       source,
       (err: string, filePaths: React.SetStateAction<string[]>) => {
         if (err) {
           console.error(err);
           return;
         }
+        console.log(window.fileUtils.resolve(source));
         setResults(filePaths);
       }
     );

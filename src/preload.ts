@@ -4,9 +4,12 @@ import { contextBridge } from "electron";
 import fs from "fs";
 import path from "path";
 
-contextBridge.exposeInMainWorld("fs", {
+contextBridge.exposeInMainWorld("fileUtils", {
   readdir: (source: string, callback: any) => {
-    console.log("source: " + path.resolve(source));
     fs.readdir(source, callback);
   },
+  resolve: (source: string) => {
+    return path.resolve(source);
+  },
+  
 });
