@@ -34,6 +34,12 @@ const Graph: React.FC<object> = () => {
       }
     );
   };
+  const fileDialogHandler = async () => {
+    const pathFromDialog = await window.fileUtils.dialog.showOpenDialog();
+    if (pathFromDialog) {
+      setSource(String(pathFromDialog));
+    }
+  };
 
   // render
   return (
@@ -51,8 +57,11 @@ const Graph: React.FC<object> = () => {
           <kbd className="kbd kbd-sm">⌘</kbd>
           <kbd className="kbd kbd-sm">K</kbd>
         </label>
-        <button className="btn btn-primary ms-2" onClick={searchHandler}>
+        <button id="search" className="btn btn-primary ms-2" onClick={searchHandler}>
           Search
+        </button>
+        <button className="btn btn-secondary ms-2" onClick={fileDialogHandler}>
+          Open
         </button>
       </div>
       <div>

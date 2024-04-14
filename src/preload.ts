@@ -1,6 +1,6 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
-import { contextBridge } from "electron";
+import { contextBridge, ipcRenderer } from "electron";
 import fs from "fs";
 import path from "path";
 
@@ -11,5 +11,14 @@ contextBridge.exposeInMainWorld("fileUtils", {
   resolve: (source: string) => {
     return path.resolve(source);
   },
-  
+  dialog: {
+    showOpenDialog: () => {
+      try {
+        return ipcRenderer.invoke("file-dialog");
+      }
+      catch (e) {
+        console.error(e);
+      }
+    },
+  },
 });
