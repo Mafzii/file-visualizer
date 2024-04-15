@@ -22,6 +22,7 @@ const Graph: React.FC<object> = () => {
     setSource(event.target.value);
   };
   const searchHandler = () => {
+    if (!source) return; 
     window.fileUtils.readdir(
       source,
       (err: string, filePaths: React.SetStateAction<string[]>) => {
@@ -34,7 +35,8 @@ const Graph: React.FC<object> = () => {
       }
     );
   };
-  const fileDialogHandler = async () => {
+  const fileDialogHandler = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
     const pathFromDialog = await window.fileUtils.dialog.showOpenDialog();
     if (pathFromDialog) {
       setSource(String(pathFromDialog));
@@ -44,7 +46,7 @@ const Graph: React.FC<object> = () => {
   // render
   return (
     <div>
-      <div className="flex justify-center">
+      <form action="#" className="flex justify-center">
         <label className="input input-bordered flex items-center gap-2">
           <input
             type="text"
@@ -63,7 +65,7 @@ const Graph: React.FC<object> = () => {
         <button className="btn btn-secondary ms-2" onClick={fileDialogHandler}>
           Open
         </button>
-      </div>
+      </form>
       <div>
         {results && (
           <div>

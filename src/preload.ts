@@ -13,12 +13,7 @@ contextBridge.exposeInMainWorld("fileUtils", {
   },
   dialog: {
     showOpenDialog: () => {
-      try {
-        return ipcRenderer.invoke("file-dialog");
-      }
-      catch (e) {
-        console.error(e);
-      }
+      return ipcRenderer.invoke("file-dialog");
     },
   },
 });
