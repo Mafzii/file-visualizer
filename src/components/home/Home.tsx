@@ -1,18 +1,15 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import Graph from "../graph/Graph";
 import Navbar from "../navbar/Navbar";
 
 function Home() {
+  const [tab, setTab] = useState("graph");
+  const switchTab = (tabName: string) => setTab(tabName);
   return (
-    <div className="bg-base-100 w-full h-full">
-      <h1 className="text-3xl font-bold">fileWiz 🪄</h1>
-      <main className="flex">
-        <section id="navbar" className="">
-          <Navbar />
-        </section>
-        <section id="graph" className="">
-          <Graph />
-        </section>
+    <div className="bg-base-100 h-full w-full">
+      <main className="flex h-full w-full">
+        <Navbar switchTab={switchTab} />
+        {tab === "graph" && <Graph />}
       </main>
     </div>
   );

@@ -22,7 +22,7 @@ const Graph: React.FC<object> = () => {
     setSource(event.target.value);
   };
   const searchHandler = () => {
-    if (!source) return; 
+    if (!source) return;
     window.fileUtils.readdir(
       source,
       (err: string, filePaths: React.SetStateAction<string[]>) => {
@@ -35,7 +35,9 @@ const Graph: React.FC<object> = () => {
       }
     );
   };
-  const fileDialogHandler = async (event: React.MouseEvent<HTMLButtonElement>) => {
+  const fileDialogHandler = async (
+    event: React.MouseEvent<HTMLButtonElement>
+  ) => {
     event.preventDefault();
     const pathFromDialog = await window.fileUtils.dialog.showOpenDialog();
     if (pathFromDialog) {
@@ -45,8 +47,12 @@ const Graph: React.FC<object> = () => {
 
   // render
   return (
-    <div>
-      <form action="#" className="flex justify-center">
+    <div className="w-full">
+      <form
+        action="#"
+        onSubmit={(e) => e.preventDefault()} // prevent reloading on first submit
+        className="flex h-[15vh] p-3"
+      >
         <label className="input input-bordered flex items-center gap-2">
           <input
             type="text"
@@ -59,18 +65,20 @@ const Graph: React.FC<object> = () => {
           <kbd className="kbd kbd-sm">⌘</kbd>
           <kbd className="kbd kbd-sm">K</kbd>
         </label>
-        <button id="search" className="btn btn-primary ms-2" onClick={searchHandler}>
+        <button
+          id="search"
+          className="btn btn-primary ms-2"
+          onClick={searchHandler}
+        >
           Search
         </button>
         <button className="btn btn-secondary ms-2" onClick={fileDialogHandler}>
           Open
         </button>
       </form>
-      <div>
+      <section id="canvas" className="border-secondary border-solid">
         {results && (
-          <div>
-            <p>{source}</p>
-            <br />
+          <div className=" p-3 max-h-[85vh] min-h-[85vh] w-full overflow-scroll">
             <div>
               {results.map((result, index) => (
                 <div key={index}>
@@ -80,7 +88,7 @@ const Graph: React.FC<object> = () => {
             </div>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 };
