@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import Canvas from "../canvas/Canvas";
 
 const Graph: React.FC<object> = () => {
   // state
@@ -77,17 +78,7 @@ const Graph: React.FC<object> = () => {
         </button>
       </form>
       <section id="canvas" className="border-secondary border-solid">
-        {results && (
-          <div className=" p-3 max-h-[85vh] min-h-[85vh] w-full overflow-scroll">
-            <div>
-              {results.map((result, index) => (
-                <div key={index}>
-                  <p>{result}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <Canvas />
       </section>
     </div>
   );
