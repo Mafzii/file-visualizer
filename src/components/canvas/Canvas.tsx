@@ -23,12 +23,14 @@ function Canvas() {
 
   useEffect(() => {
     const canvasCoords = canvas.current.getBoundingClientRect();
+    xOffset = canvasCoords.x;
+    yOffset = canvasCoords.y;
     console.log(canvasCoords);
   }, [canvas]);
 
   function create(event: MouseEvent) {
-    const x = event.clientX;
-    const y = event.clientY;
+    const x = event.clientX - xOffset;
+    const y = event.clientY - yOffset;
     // console.log(x, y);
 
     const folder = new Folder("New Folder", "path/to/folder", []);
@@ -40,8 +42,8 @@ function Canvas() {
   }
 
   function hover(event: MouseEvent) {
-    const x = event.clientX;
-    const y = event.clientY;
+    const x = event.clientX - xOffset;
+    const y = event.clientY - yOffset;
 
     // console.log(x, y);
 
