@@ -4,16 +4,22 @@ import { Folder, File } from "./canvas-objects";
 function Canvas() {
   const canvas = useRef<HTMLCanvasElement>(null);
   const context = useRef<CanvasRenderingContext2D | null>(null);
-  let xOffset: number;
-  let yOffset: number;
+  
+  // * all control variables for general items
+  let offsetX: number;
+  let offsetY: number;
+  const boxWidth = 125;
+  const boxHeight = 75;
+  const boxRadius = 25;
 
   const [folders, setFolders] = useState<Folder[]>([]);
 
   // all initial setup should be done here
   useEffect(() => {
     const element = canvas.current;
-    element.width = 800;
-    element.height = 800;
+    // todo: calculate canvas width and height based on viewport
+    element.width = 700;
+    element.height = 700;
 
     context.current = element.getContext("2d");
 
@@ -21,29 +27,32 @@ function Canvas() {
     element.addEventListener("mousemove", (event) => hover(event));
   }, []);
 
+  // when the canvas is rendered or re-rendered
   useEffect(() => {
     const canvasCoords = canvas.current.getBoundingClientRect();
-    xOffset = canvasCoords.x;
-    yOffset = canvasCoords.y;
+    offsetX = canvasCoords.x;
+    offsetY = canvasCoords.y;
     console.log(canvasCoords);
   }, [canvas]);
 
   function create(event: MouseEvent) {
-    const x = event.clientX - xOffset;
-    const y = event.clientY - yOffset;
+    const x = event.clientX - offsetX - Math.floor(boxWidth/2);
+    const y = event.clientY - offsetY - Math.floor(boxHeight/2);
     // console.log(x, y);
 
     const folder = new Folder("New Folder", "path/to/folder", []);
 
     context.current.fillStyle = "blue";
-    context.current.fillRect(x, y, 100, 100);
+    context.current.roundRect(x, y, boxWidth, boxHeight, boxRadius);
+    context.current.stroke();
+    context.current.fill();
 
     setFolders([...folders, folder]);
   }
 
   function hover(event: MouseEvent) {
-    const x = event.clientX - xOffset;
-    const y = event.clientY - yOffset;
+    const x = event.clientX - offsetX;
+    const y = event.clientY - offsetY;
 
     // console.log(x, y);
 
