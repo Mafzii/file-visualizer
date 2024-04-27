@@ -4,13 +4,15 @@ import { Folder, File } from "./canvas-objects";
 function Canvas() {
   const canvas = useRef<HTMLCanvasElement>(null);
   const context = useRef<CanvasRenderingContext2D | null>(null);
-  
+
   // * all control variables for general items
   let offsetX: number;
   let offsetY: number;
   const boxWidth = 125;
   const boxHeight = 75;
   const boxRadius = 25;
+  const boxColor = "#4f46e5";
+  const outlineColor = "#d1d5db";
 
   const [folders, setFolders] = useState<Folder[]>([]);
 
@@ -36,13 +38,14 @@ function Canvas() {
   }, [canvas]);
 
   function create(event: MouseEvent) {
-    const x = event.clientX - offsetX - Math.floor(boxWidth/2);
-    const y = event.clientY - offsetY - Math.floor(boxHeight/2);
+    const x = event.clientX - offsetX - Math.floor(boxWidth / 2);
+    const y = event.clientY - offsetY - Math.floor(boxHeight / 2);
     // console.log(x, y);
 
     const folder = new Folder("New Folder", "path/to/folder", []);
 
-    context.current.fillStyle = "blue";
+    context.current.fillStyle = boxColor;
+    context.current.strokeStyle = outlineColor;
     context.current.roundRect(x, y, boxWidth, boxHeight, boxRadius);
     context.current.stroke();
     context.current.fill();
@@ -55,9 +58,6 @@ function Canvas() {
     const y = event.clientY - offsetY;
 
     // console.log(x, y);
-
-    context.current.fillStyle = "red";
-    context.current.fillRect(x, y, 1, 1);
   }
 
   return <canvas className="border border-black" ref={canvas}></canvas>;
