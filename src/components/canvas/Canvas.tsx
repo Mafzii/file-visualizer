@@ -16,39 +16,39 @@ function Canvas() {
 
   const [folders, setFolders] = useState<Folder[]>([]);
 
-  // all initial setup should be done here
-  useEffect(() => {
-    const element = canvas.current;
-    // todo: calculate canvas width and height based on viewport
-    element.width = 700;
-    element.height = 700;
-
-    context.current = element.getContext("2d");
-
-    element.addEventListener("click", (event) => create(event));
-    element.addEventListener("mousemove", (event) => hover(event));
-  }, []);
-
   // when the canvas is rendered or re-rendered
   useEffect(() => {
-    const canvasCoords = canvas.current.getBoundingClientRect();
+    const canvasElement = canvas.current;
+    context.current = canvasElement.getContext("2d");
+
+    canvasElement.addEventListener("click", (event) => create(event));
+    canvasElement.addEventListener("mousemove", (event) => hover(event));
+    window.addEventListener("resize", () => resize());
+
+    const canvasCoords = canvasElement.getBoundingClientRect();
     offsetX = canvasCoords.x;
     offsetY = canvasCoords.y;
+
+    canvasElement.width = window.innerWidth - offsetX;
+    canvasElement.height = window.innerHeight - offsetY;
+
     console.log(canvasCoords);
   }, [canvas]);
 
   function create(event: MouseEvent) {
+    const ctx = context.current;
     const x = event.clientX - offsetX - Math.floor(boxWidth / 2);
     const y = event.clientY - offsetY - Math.floor(boxHeight / 2);
-    // console.log(x, y);
+    console.log(offsetX,offsetY)
+    console.log(x, y);
 
     const folder = new Folder("New Folder", "path/to/folder", []);
 
-    context.current.fillStyle = boxColor;
-    context.current.strokeStyle = outlineColor;
-    context.current.roundRect(x, y, boxWidth, boxHeight, boxRadius);
-    context.current.stroke();
-    context.current.fill();
+    ctx.fillStyle = boxColor;
+    ctx.strokeStyle = outlineColor;
+    ctx.roundRect(x, y, boxWidth, boxHeight, boxRadius);
+    ctx.stroke();
+    ctx.fill();
 
     setFolders([...folders, folder]);
   }
@@ -60,7 +60,18 @@ function Canvas() {
     // console.log(x, y);
   }
 
-  return <canvas className="border border-black" ref={canvas}></canvas>;
+  function resize() {
+    const canvasCoords = canvas.current.getBoundingClientRect();
+    offsetX = canvasCoords.x;
+    offsetY = canvasCoords.y;
+    const canvasElement = canvas.current;
+    canvasElement.width = window.innerWidth - offsetX;
+    canvasElement.height = window.innerHeight - offsetY;
+    // todo: redraw existing objects on new canvas
+    console.log(canvasCoords, "resize");
+  }
+
+  return <canvas className="border border-black h-full w-full" ref={canvas}></canvas>;
 }
 
 export default Canvas;
