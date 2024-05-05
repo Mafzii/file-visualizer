@@ -77,7 +77,7 @@ const Graph: React.FC<object> = () => {
           Open
         </button>
       </form>
-      <section id="canvas" className="border-secondary border-solid h-[85vh]">
+      <section id="canvas" className="border border-secondary border-solid h-[85vh]">
         <Canvas />
       </section>
     </div>

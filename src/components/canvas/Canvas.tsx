@@ -8,6 +8,7 @@ function Canvas() {
   // * all control variables for general items
   let offsetX: number;
   let offsetY: number;
+  const scale = 1;
   const boxWidth = 125;
   const boxHeight = 75;
   const boxRadius = 25;
@@ -23,6 +24,7 @@ function Canvas() {
 
     canvasElement.addEventListener("click", (event) => create(event));
     canvasElement.addEventListener("mousemove", (event) => hover(event));
+    canvasElement.addEventListener("wheel", (event) => panning(event));
     window.addEventListener("resize", () => resize());
 
     const canvasCoords = canvasElement.getBoundingClientRect();
@@ -37,15 +39,16 @@ function Canvas() {
 
   function create(event: MouseEvent) {
     const ctx = context.current;
-    const x = event.clientX - offsetX - Math.floor(boxWidth / 2);
-    const y = event.clientY - offsetY - Math.floor(boxHeight / 2);
-    console.log(offsetX,offsetY)
+    const x = (event.clientX - offsetX - Math.floor(boxWidth / 2)) * scale;
+    const y = (event.clientY - offsetY - Math.floor(boxHeight / 2)) * scale;
+    console.log(offsetX, offsetY);
     console.log(x, y);
 
     const folder = new Folder("New Folder", "path/to/folder", []);
 
     ctx.fillStyle = boxColor;
     ctx.strokeStyle = outlineColor;
+    ctx.lineWidth = 10;
     ctx.roundRect(x, y, boxWidth, boxHeight, boxRadius);
     ctx.stroke();
     ctx.fill();
@@ -71,7 +74,12 @@ function Canvas() {
     console.log(canvasCoords, "resize");
   }
 
-  return <canvas className="border border-black h-full w-full" ref={canvas}></canvas>;
+  function panning(event: MouseEvent) {
+    console.log("zoom fired!", event);
+    // scale = scale * event.x;
+  }
+
+  return <canvas className="h-full w-full" ref={canvas}></canvas>;
 }
 
 export default Canvas;
