@@ -1,33 +1,13 @@
-class CanvasObject {
+class CanvasItem {
+  x: number;
+  y: number;
   connections: string[];
 
-  constructor() {
-    this.connections = [];
+  constructor(x: number, y: number, connections: string[]) {
+    this.x = x;
+    this.y = y;
+    this.connections = connections;
   }
 }
 
-class Folder extends CanvasObject {
-  name: string;
-  path: string;
-  files: string[];
-
-  constructor(name: string, path: string, files: string[]) {
-    super();
-    this.name = name;
-    this.path = path;
-    this.files = files;
-  }
-}
-
-class File extends CanvasObject {
-  name: string;
-  path: string;
-
-  constructor(name: string, path: string) {
-    super();
-    this.name = name;
-    this.path = path;
-  }
-}
-
-export { Folder, File };
+export { CanvasItem };
