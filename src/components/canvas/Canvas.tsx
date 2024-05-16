@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { CanvasItem } from "./canvas-objects";
+// todo use jsonCanvas for items instead
 
 function Canvas() {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -74,16 +75,29 @@ function Canvas() {
     console.log(canvasCoords, "resize");
   }
 
+  let isPanning = true;
+  let wheelEventEndTimeout: string | number | NodeJS.Timeout = null;
   function panning(event: WheelEvent) {
+    const canvasElement = canvas.current;
     const ctx = context.current;
+
     const dx = event.deltaX;
     const dy = event.deltaY;
     console.log("panning fired!", event);
+    ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     ctx.translate(event.deltaX, event.deltaY);
+    
     offsetX = offsetX + dx;
     offsetY = offsetY + dy;
 
-    window.requestAnimationFrame(render);
+    isPanning = true;
+
+    clearTimeout(wheelEventEndTimeout);
+    wheelEventEndTimeout = setTimeout(() => {
+      console.log("wheel end");
+    }, 100);
+
+    render();
   }
 
   function render() {
@@ -93,9 +107,10 @@ function Canvas() {
     const canvasElement = canvas.current;
     const ctx = context.current;
     ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    
+
     console.log(items);
     items.forEach((item) => {
+      console.log(item.x, item.y);
       // todo handle different items separately
       ctx.fillStyle = boxColor;
       ctx.strokeStyle = outlineColor;
