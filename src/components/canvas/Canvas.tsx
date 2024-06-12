@@ -96,11 +96,12 @@ const Canvas: React.FC = () => {
 
   // Function to add a new item
   const addItem = (event: { clientX: number; clientY: number }) => {
-    const x = event.clientX - offsetX*2; //- Math.floor(boxWidth / 2)) * scale;
-    const y = event.clientY - offsetY*2; //- Math.floor(boxHeight / 2)) * scale;
+    const x = event.clientX - offsetX; //- Math.floor(boxWidth / 2)) * scale;
+    const y = event.clientY - offsetY; //- Math.floor(boxHeight / 2)) * scale;
     console.log("client: ", event.clientX, event.clientY);
     console.log("offsets: ", offsetX, offsetY);
     console.log("position: ", x, y);
+    
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
@@ -132,6 +133,9 @@ const Canvas: React.FC = () => {
       onWheel={onWheel}
       onClick={addItem}
       style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
         border: '1px solid black',
         display: 'block', // Prevents inline-block margin issues
         margin: 0, // Reset margins
