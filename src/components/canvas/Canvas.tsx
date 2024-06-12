@@ -28,10 +28,12 @@ const Canvas: React.FC = () => {
     const canvasCoords = canvas.getBoundingClientRect();
     setOffsetX(canvasCoords.x);
     setOffsetY(canvasCoords.y);
+
     console.log("initial offset: ", canvasCoords.x, canvasCoords.y);
-    canvas.width = window.innerWidth - offsetX;
-    canvas.height = window.innerHeight - offsetY;
-    // todo canvas generation is off
+    console.log("window: ", window.innerWidth, window.innerHeight);
+
+    canvas.width = window.innerWidth - canvasCoords.x;
+    canvas.height = window.innerHeight - canvasCoords.y;
   }, []);
 
   // Ref to store the latest wheel event for debouncing
@@ -48,7 +50,6 @@ const Canvas: React.FC = () => {
       ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
       ctx.save();
-      ctx.resetTransform()
       ctx.translate(offsetX, offsetY);
 
       // Render each item
@@ -96,14 +97,16 @@ const Canvas: React.FC = () => {
 
   // Function to add a new item
   const addItem = (event: { clientX: number; clientY: number }) => {
-    const x = event.clientX - offsetX; //- Math.floor(boxWidth / 2)) * scale;
-    const y = event.clientY - offsetY; //- Math.floor(boxHeight / 2)) * scale;
-    console.log("client: ", event.clientX, event.clientY);
-    console.log("offsets: ", offsetX, offsetY);
-    console.log("position: ", x, y);
-    
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
+    const canvasCoords = canvas.getBoundingClientRect();
+
+    const x = (event.clientX - canvasCoords.x - offsetX - Math.floor(boxWidth / 2)) * scale;
+    const y = (event.clientY - canvasCoords.y - offsetY - Math.floor(boxHeight / 2)) * scale;
+    console.log("client: ", event.clientX, event.clientY);
+    console.log("offsets: ", canvasCoords.x, canvasCoords.y);
+    console.log("position: ", x, y);
+
 
     const newItem: CanvasItem = {
       x: x,
@@ -129,17 +132,16 @@ const Canvas: React.FC = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="h-full w-full"
       onWheel={onWheel}
       onClick={addItem}
       style={{
-        position: 'absolute',
+        position: "absolute",
         top: 0,
         left: 0,
-        border: '1px solid black',
-        display: 'block', // Prevents inline-block margin issues
+        display: "block", // Prevents inline-block margin issues
         margin: 0, // Reset margins
         padding: 0, // Reset padding
+        overflow: "hidden"
       }}
     />
   );
