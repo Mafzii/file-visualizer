@@ -1,14 +1,21 @@
-import React, { useEffect, useRef, useState } from "react";
-import { CanvasItem } from "./canvas-objects";
-// todo use jsonCanvas for items instead
+import React, { useRef, useEffect, useState, useCallback } from "react";
 
-function Canvas() {
-  const canvas = useRef<HTMLCanvasElement>(null);
-  const context = useRef<CanvasRenderingContext2D | null>(null);
+// Define the type for items
+interface CanvasItem {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+}
+
+const Canvas: React.FC = () => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [offsetX, setOffsetX] = useState(0);
+  const [offsetY, setOffsetY] = useState(0);
+  const [items, setItems] = useState<CanvasItem[]>([]);
 
   // * all control variables for general items
-  let offsetX: number;
-  let offsetY: number;
   const scale = 1;
   const boxWidth = 125;
   const boxHeight = 75;
@@ -16,113 +23,122 @@ function Canvas() {
   const boxColor = "#4f46e5";
   const outlineColor = "#d1d5db";
 
-  let items: CanvasItem[] = [];
-
-  // when the canvas is rendered or re-rendered
   useEffect(() => {
-    const canvasElement = canvas.current;
-    context.current = canvasElement.getContext("2d");
+    const canvas = canvasRef.current;
+    const canvasCoords = canvas.getBoundingClientRect();
+    setOffsetX(canvasCoords.x);
+    setOffsetY(canvasCoords.y);
+    console.log("initial offset: ", canvasCoords.x, canvasCoords.y);
+    canvas.width = window.innerWidth - offsetX;
+    canvas.height = window.innerHeight - offsetY;
+    // todo canvas generation is off
+  }, []);
 
-    canvasElement.addEventListener("click", (event) => create(event));
-    canvasElement.addEventListener("mousemove", (event) => hover(event));
-    canvasElement.addEventListener("wheel", (event) => panning(event));
-    window.addEventListener("resize", () => resize());
+  // Ref to store the latest wheel event for debouncing
+  const latestWheelEvent = useRef<WheelEvent | null>(null);
 
-    const canvasCoords = canvasElement.getBoundingClientRect();
-    offsetX = canvasCoords.x;
-    offsetY = canvasCoords.y;
+  // Function to render the canvas content
+  const renderCanvas = useCallback(
+    (
+      ctx: CanvasRenderingContext2D,
+      items: CanvasItem[],
+      offsetX: number,
+      offsetY: number
+    ) => {
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    canvasElement.width = window.innerWidth - offsetX;
-    canvasElement.height = window.innerHeight - offsetY;
+      ctx.save();
+      ctx.resetTransform()
+      ctx.translate(offsetX, offsetY);
 
-    console.log(canvasCoords);
-  }, [canvas]);
+      // Render each item
+      items.forEach((item) => {
+        ctx.fillStyle = item.color;
+        ctx.fillRect(item.x, item.y, item.width, item.height);
+      });
 
-  function create(event: MouseEvent) {
-    const ctx = context.current;
-    const x = (event.clientX - offsetX - Math.floor(boxWidth / 2)) * scale;
-    const y = (event.clientY - offsetY - Math.floor(boxHeight / 2)) * scale;
-    console.log(offsetX, offsetY);
-    console.log(x, y);
+      ctx.restore();
+    },
+    []
+  );
 
-    const item = new CanvasItem(x, y, []);
+  // Handle the actual panning with debouncing using requestAnimationFrame
+  const handlePanning = useCallback(() => {
+    // if (!latestWheelEvent.current) return;
 
-    ctx.fillStyle = boxColor;
-    ctx.strokeStyle = outlineColor;
-    ctx.lineWidth = 10;
-    ctx.roundRect(x, y, boxWidth, boxHeight, boxRadius);
-    ctx.stroke();
-    ctx.fill();
+    const { deltaX, deltaY } = latestWheelEvent.current;
+    setOffsetX((prevOffsetX) => prevOffsetX + deltaX);
+    setOffsetY((prevOffsetY) => prevOffsetY + deltaY);
+  }, []);
 
-    items = [...items, item];
-  }
+  // Wheel event handler
+  const onWheel = useCallback(
+    (event: React.WheelEvent<HTMLCanvasElement>) => {
+      // Store the latest wheel event details
+      latestWheelEvent.current = event.nativeEvent;
 
-  function hover(event: MouseEvent) {
-    const x = event.clientX - offsetX;
-    const y = event.clientY - offsetY;
+      // Use requestAnimationFrame to handle debouncing
+      requestAnimationFrame(handlePanning);
+    },
+    [handlePanning]
+  );
 
-    // console.log(x, y);
-  }
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  function resize() {
-    const canvasCoords = canvas.current.getBoundingClientRect();
-    offsetX = canvasCoords.x;
-    offsetY = canvasCoords.y;
-    const canvasElement = canvas.current;
-    canvasElement.width = window.innerWidth - offsetX;
-    canvasElement.height = window.innerHeight - offsetY;
-    // todo: redraw existing objects on new canvas
-    console.log(canvasCoords, "resize");
-  }
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-  let isPanning = true;
-  let wheelEventEndTimeout: string | number | NodeJS.Timeout = null;
-  function panning(event: WheelEvent) {
-    const canvasElement = canvas.current;
-    const ctx = context.current;
+    // Initial and subsequent rendering
+    renderCanvas(ctx, items, offsetX, offsetY);
+  }, [items, offsetX, offsetY, renderCanvas]);
 
-    const dx = event.deltaX;
-    const dy = event.deltaY;
-    console.log("panning fired!", event);
-    ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    ctx.translate(event.deltaX, event.deltaY);
-    
-    offsetX = offsetX + dx;
-    offsetY = offsetY + dy;
+  // Function to add a new item
+  const addItem = (event: { clientX: number; clientY: number }) => {
+    const x = event.clientX - offsetX*2; //- Math.floor(boxWidth / 2)) * scale;
+    const y = event.clientY - offsetY*2; //- Math.floor(boxHeight / 2)) * scale;
+    console.log("client: ", event.clientX, event.clientY);
+    console.log("offsets: ", offsetX, offsetY);
+    console.log("position: ", x, y);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
 
-    isPanning = true;
+    const newItem: CanvasItem = {
+      x: x,
+      y: y,
+      width: boxWidth,
+      height: boxHeight,
+      color: boxColor,
+    };
 
-    clearTimeout(wheelEventEndTimeout);
-    wheelEventEndTimeout = setTimeout(() => {
-      console.log("wheel end");
-    }, 100);
+    setItems((prevItems) => [...prevItems, newItem]);
+    renderCanvas(ctx, items, offsetX, offsetY);
+  };
 
-    render();
-  }
-
-  function render() {
-    /*
-    
-    */
-    const canvasElement = canvas.current;
-    const ctx = context.current;
-    ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-
-    console.log(items);
-    items.forEach((item) => {
-      console.log(item.x, item.y);
-      // todo handle different items separately
-      ctx.fillStyle = boxColor;
-      ctx.strokeStyle = outlineColor;
-      ctx.lineWidth = 10;
-      ctx.roundRect(item.x, item.y, boxWidth, boxHeight, boxRadius);
-      ctx.stroke();
-      ctx.fill();
+  // Function to update an existing item
+  const updateItem = (index: number, newProperties: Partial<CanvasItem>) => {
+    setItems((prevItems) => {
+      const updatedItems = [...prevItems];
+      updatedItems[index] = { ...updatedItems[index], ...newProperties };
+      return updatedItems;
     });
-    return;
-  }
+  };
 
-  return <canvas className="h-full w-full" ref={canvas}></canvas>;
-}
+  return (
+    <canvas
+      ref={canvasRef}
+      className="h-full w-full"
+      onWheel={onWheel}
+      onClick={addItem}
+      style={{
+        border: '1px solid black',
+        display: 'block', // Prevents inline-block margin issues
+        margin: 0, // Reset margins
+        padding: 0, // Reset padding
+      }}
+    />
+  );
+};
 
 export default Canvas;
