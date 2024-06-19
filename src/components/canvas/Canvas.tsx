@@ -13,7 +13,7 @@ const Canvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState(1.0);
   const [items, setItems] = useState<CanvasItem[]>([]);
 
   // * Control variables for general items
@@ -23,22 +23,18 @@ const Canvas: React.FC = () => {
   const boxColor = "#4f46e5";
   const outlineColor = "#d1d5db";
 
+  // Initial setup of canvas dimensions and offsets
   useEffect(() => {
     const canvas = canvasRef.current;
-    const canvasCoords = canvas.getBoundingClientRect();
-    setOffsetX(canvasCoords.x);
-    setOffsetY(canvasCoords.y);
+    if (canvas) {
+      const canvasCoords = canvas.getBoundingClientRect();
 
-    console.log("initial offset: ", canvasCoords.x, canvasCoords.y);
-    console.log("window: ", window.innerWidth, window.innerHeight);
+      canvas.width = window.innerWidth - canvasCoords.x;
+      canvas.height = window.innerHeight - canvasCoords.y;
 
-    canvas.width = window.innerWidth - canvasCoords.x;
-    canvas.height = window.innerHeight - canvasCoords.y;
+      console.log("Canvas initialized: ", canvas.width, canvas.height);
+    }
   }, []);
-
-  // Ref to store the latest events for debouncing
-  const latestWheelEvent = useRef<WheelEvent | null>(null);
-  const latestScrollEvent = useRef(null);
 
   // Function to render the canvas content
   const renderCanvas = useCallback(
@@ -46,15 +42,16 @@ const Canvas: React.FC = () => {
       ctx: CanvasRenderingContext2D,
       items: CanvasItem[],
       offsetX: number,
-      offsetY: number
+      offsetY: number,
+      scale: number
     ) => {
       ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
       ctx.save();
       ctx.translate(offsetX, offsetY);
+      ctx.scale(scale, scale);
 
       // Render each item
-      // todo add scale to rendering
       items.forEach((item) => {
         ctx.fillStyle = item.color;
         ctx.fillRect(item.x, item.y, item.width, item.height);
@@ -65,6 +62,7 @@ const Canvas: React.FC = () => {
     []
   );
 
+  // Re-render the canvas when items, offset, or scale change
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -72,108 +70,74 @@ const Canvas: React.FC = () => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Initial and subsequent rendering
-    renderCanvas(ctx, items, offsetX, offsetY);
+    // Render canvas content
+    renderCanvas(ctx, items, offsetX, offsetY, scale);
   }, [items, offsetX, offsetY, scale, renderCanvas]);
 
-  // Handle the actual panning with debouncing using requestAnimationFrame
-  const handlePanning = useCallback(() => {
-    if (!latestWheelEvent.current) return;
+  // Handle panning (dragging) based on wheel event without Ctrl key
+  const handlePanning = useCallback((event: WheelEvent) => {
+    const { deltaX, deltaY } = event;
 
-    const { deltaX, deltaY } = latestWheelEvent.current;
     setOffsetX((prevOffsetX) => prevOffsetX + deltaX);
     setOffsetY((prevOffsetY) => prevOffsetY + deltaY);
   }, []);
 
-  // Wheel event handler
-  const onWheel = useCallback(
-    (event: React.WheelEvent<HTMLCanvasElement>) => {
-      // Handling zoom for touchpad users
-      if (event.ctrlKey) {
-        latestScrollEvent.current = event.nativeEvent;
-        requestAnimationFrame(handleScrolling);
-      } else {
-        latestWheelEvent.current = event.nativeEvent;
-        requestAnimationFrame(handlePanning);
-      }
-    },
-    [handlePanning]
-  );
+  // Handle zooming (scaling) based on wheel event with Ctrl key
+  const handleScaling = useCallback((event: WheelEvent) => {
+    const { deltaY } = event;
 
-  const handleScrolling = useCallback(() => {
-    if (!latestScrollEvent.current) return;
-
-    // only do this if wheel event exists
-    const { deltaX, deltaY } = latestScrollEvent.current;
-
-    // Handling zoom
-    if (latestScrollEvent.current.ctrlKey) {
-      setScale(scale+(deltaY/100));
-      console.log(scale, deltaY);
-    } else if (latestScrollEvent.current) {
-      // Handle horizontal scroll
-    }
+    setScale((prevScale) => {
+      const newScale = prevScale - deltaY * 0.01;
+      return Math.max(0.1, Math.min(newScale, 2));
+    });
   }, []);
 
-  const onScroll = useCallback(
-    (event: React.UIEvent<HTMLCanvasElement>) => {
-      latestScrollEvent.current = event.nativeEvent;
-
-      requestAnimationFrame(handleScrolling);
+  // General wheel event handler for both zooming and panning on touchpad
+  const onWheel = useCallback(
+    (event: React.WheelEvent<HTMLCanvasElement>) => {
+      if (event.ctrlKey) {
+        handleScaling(event.nativeEvent);
+      } else {
+        handlePanning(event.nativeEvent);
+      }
     },
-    [handleScrolling]
+    [handlePanning, handleScaling]
   );
 
-  // Function to add a new item
-  const addItem = (event: { clientX: number; clientY: number }) => {
+  // Function to add a new item on canvas click
+  const addItem = (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
+    if (!canvas) return;
+
     const canvasCoords = canvas.getBoundingClientRect();
 
-    const x =
-      (event.clientX - canvasCoords.x - offsetX - Math.floor(boxWidth / 2)) *
-      scale;
-    const y =
-      (event.clientY - canvasCoords.y - offsetY - Math.floor(boxHeight / 2)) *
-      scale;
-    console.log("client: ", event.clientX, event.clientY);
-    console.log("offsets: ", canvasCoords.x, canvasCoords.y);
-    console.log("position: ", x, y);
+    // Calculate the mouse position relative to the scaled canvas
+    const x = (event.clientX - canvasCoords.left - offsetX) / scale - boxWidth / 2;
+    const y = (event.clientY - canvasCoords.top - offsetY) / scale - boxHeight / 2;
 
     const newItem: CanvasItem = {
-      x: x,
-      y: y,
+      x,
+      y,
       width: boxWidth,
       height: boxHeight,
       color: boxColor,
     };
 
     setItems((prevItems) => [...prevItems, newItem]);
-    renderCanvas(ctx, items, offsetX, offsetY);
-  };
-
-  // Function to update an existing item
-  const updateItem = (index: number, newProperties: Partial<CanvasItem>) => {
-    setItems((prevItems) => {
-      const updatedItems = [...prevItems];
-      updatedItems[index] = { ...updatedItems[index], ...newProperties };
-      return updatedItems;
-    });
   };
 
   return (
     <canvas
       ref={canvasRef}
       onWheel={onWheel}
-      onScroll={onScroll}
       onClick={addItem}
       style={{
         position: "absolute",
         top: 0,
         left: 0,
-        display: "block", // Prevents inline-block margin issues
-        margin: 0, // Reset margins
-        padding: 0, // Reset padding
+        display: "block",
+        margin: 0,
+        padding: 0,
         overflow: "hidden",
       }}
     />
