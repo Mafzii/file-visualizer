@@ -6,6 +6,7 @@ interface CanvasItem {
   y: number;
   width: number;
   height: number;
+  radius?: number;
   color: string;
 }
 
@@ -21,6 +22,7 @@ const Canvas: React.FC = () => {
   const boxHeight = 75;
   const boxRadius = 25;
   const boxColor = "#4f46e5";
+  const circleColor = '#f43f5e'
   const outlineColor = "#d1d5db";
 
   // Initial setup of canvas dimensions and offsets
@@ -54,7 +56,12 @@ const Canvas: React.FC = () => {
       // Render each item
       items.forEach((item) => {
         ctx.fillStyle = item.color;
-        ctx.fillRect(item.x, item.y, item.width, item.height);
+        ctx.strokeStyle = outlineColor;
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.roundRect(item.x, item.y, item.width, item.height, item.radius);
+        ctx.stroke();
+        ctx.fill();
       });
 
       ctx.restore();
@@ -121,6 +128,7 @@ const Canvas: React.FC = () => {
       width: boxWidth,
       height: boxHeight,
       color: boxColor,
+      radius: boxRadius,
     };
 
     setItems((prevItems) => [...prevItems, newItem]);
