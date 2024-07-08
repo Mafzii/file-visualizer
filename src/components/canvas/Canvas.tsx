@@ -134,11 +134,34 @@ const Canvas: React.FC = () => {
     setItems((prevItems) => [...prevItems, newItem]);
   };
 
+  const startConnection = (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const canvasCoords = canvas.getBoundingClientRect();
+
+    // Calculate the mouse position relative to the scaled canvas
+    const x = (event.clientX - canvasCoords.left - offsetX) / scale;
+    const y = (event.clientY - canvasCoords.top - offsetY) / scale;
+
+    console.log(x, y);
+
+    // Check if the click is on an existing item
+    const clickedItem = items.find((item) => {
+      return x >= item.x && x <= item.x + item.width && y >= item.y && y <= item.y + item.height;
+    });
+
+    if (clickedItem) {
+      console.log("Clicked on item: ", clickedItem);
+    }
+  }
+
   return (
     <canvas
       ref={canvasRef}
       onWheel={onWheel}
       onClick={addItem}
+      onMouseDown={startConnection}
       style={{
         position: "absolute",
         top: 0,
