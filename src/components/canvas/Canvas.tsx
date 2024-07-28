@@ -10,6 +10,7 @@ interface CanvasItem {
   color: string;
 }
 
+// use memoization on the items coming from the parent component
 const Canvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [offsetX, setOffsetX] = useState(0);
@@ -22,7 +23,7 @@ const Canvas: React.FC = () => {
   const boxHeight = 75;
   const boxRadius = 25;
   const boxColor = "#4f46e5";
-  const circleColor = '#f43f5e'
+  const circleColor = "#f43f5e";
   const outlineColor = "#d1d5db";
 
   // Initial setup of canvas dimensions and offsets
@@ -116,11 +117,19 @@ const Canvas: React.FC = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // early exit if mousedown on an existing element
+    if (isConnection) {
+      isConnection = false;
+      return;
+    }
+
     const canvasCoords = canvas.getBoundingClientRect();
 
     // Calculate the mouse position relative to the scaled canvas
-    const x = (event.clientX - canvasCoords.left - offsetX) / scale - boxWidth / 2;
-    const y = (event.clientY - canvasCoords.top - offsetY) / scale - boxHeight / 2;
+    const x =
+      (event.clientX - canvasCoords.left - offsetX) / scale - boxWidth / 2;
+    const y =
+      (event.clientY - canvasCoords.top - offsetY) / scale - boxHeight / 2;
 
     const newItem: CanvasItem = {
       x,
@@ -134,7 +143,11 @@ const Canvas: React.FC = () => {
     setItems((prevItems) => [...prevItems, newItem]);
   };
 
-  const startConnection = (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
+  let isConnection = false;
+  let startConnectionItem: CanvasItem | null = null;
+  const startConnection = (
+    event: React.MouseEvent<HTMLCanvasElement, MouseEvent>
+  ) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -147,14 +160,70 @@ const Canvas: React.FC = () => {
     console.log(x, y);
 
     // Check if the click is on an existing item
-    const clickedItem = items.find((item) => {
-      return x >= item.x && x <= item.x + item.width && y >= item.y && y <= item.y + item.height;
+    startConnectionItem = items.find((item) => {
+      return (
+        x >= item.x &&
+        x <= item.x + item.width &&
+        y >= item.y &&
+        y <= item.y + item.height
+      );
     });
 
-    if (clickedItem) {
-      console.log("Clicked on item: ", clickedItem);
+    if (startConnectionItem) {
+      isConnection = true;
+      console.log("Clicked on item: ", startConnectionItem);
     }
-  }
+  };
+
+  const createConnection = (
+    event: React.MouseEvent<HTMLCanvasElement, MouseEvent>
+  ) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    if (!isConnection) return;
+
+    const canvasCoords = canvas.getBoundingClientRect();
+
+    // Calculate the mouse position relative to the scaled canvas
+    const x = (event.clientX - canvasCoords.left - offsetX) / scale;
+    const y = (event.clientY - canvasCoords.top - offsetY) / scale;
+
+    // If this event is on a new item then create a line from the initial item to the new item
+    const endConnectionItem = items.find((item) => {
+      return (
+        x >= item.x &&
+        x <= item.x + item.width &&
+        y >= item.y &&
+        y <= item.y + item.height
+      );
+    });
+
+    if (endConnectionItem) {
+      console.log("Connected to item: ", endConnectionItem);
+      // Draw a line between the two items
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      ctx.save();
+      ctx.translate(offsetX, offsetY);
+      ctx.scale(scale, scale);
+
+      ctx.strokeStyle = outlineColor;
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(
+        startConnectionItem.x + startConnectionItem.width / 2,
+        startConnectionItem.y + startConnectionItem.height / 2
+      );
+      ctx.lineTo(
+        endConnectionItem.x + endConnectionItem.width / 2,
+        endConnectionItem.y + endConnectionItem.height / 2
+      );
+      ctx.stroke();
+
+      ctx.restore();
+    }
+  };
 
   return (
     <canvas
@@ -162,6 +231,7 @@ const Canvas: React.FC = () => {
       onWheel={onWheel}
       onClick={addItem}
       onMouseDown={startConnection}
+      onMouseUp={createConnection}
       style={{
         position: "absolute",
         top: 0,
