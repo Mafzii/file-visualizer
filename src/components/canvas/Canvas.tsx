@@ -10,6 +10,14 @@ interface CanvasItem {
   color: string;
 }
 
+interface Connection {
+  item1: CanvasItem;
+  item2: CanvasItem;
+  color: string;
+  side1?: string;
+  side2?: string;
+}
+
 // use memoization on the items coming from the parent component
 const Canvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -17,6 +25,10 @@ const Canvas: React.FC = () => {
   const [offsetY, setOffsetY] = useState(0);
   const [scale, setScale] = useState(1.0);
   const [items, setItems] = useState<CanvasItem[]>([]);
+  const [connections, setConnections] = useState<Connection[]>([]);
+  const [isConnection, setIsConnection] = useState(false);
+  const [startConnectionItem, setStartConnectionItem] =
+    useState<CanvasItem | null>(null);
 
   // * Control variables for general items
   const boxWidth = 125;
@@ -25,6 +37,7 @@ const Canvas: React.FC = () => {
   const boxColor = "#4f46e5";
   const circleColor = "#f43f5e";
   const outlineColor = "#d1d5db";
+  const connectionColor = "#f43f5e";
 
   // Initial setup of canvas dimensions and offsets
   useEffect(() => {
@@ -44,6 +57,7 @@ const Canvas: React.FC = () => {
     (
       ctx: CanvasRenderingContext2D,
       items: CanvasItem[],
+      connections: Connection[],
       offsetX: number,
       offsetY: number,
       scale: number
@@ -55,7 +69,7 @@ const Canvas: React.FC = () => {
       ctx.scale(scale, scale);
 
       // Render each item
-      items.forEach((item) => {
+      items?.forEach((item) => {
         ctx.fillStyle = item.color;
         ctx.strokeStyle = outlineColor;
         ctx.lineWidth = 10;
@@ -63,6 +77,16 @@ const Canvas: React.FC = () => {
         ctx.roundRect(item.x, item.y, item.width, item.height, item.radius);
         ctx.stroke();
         ctx.fill();
+      });
+
+      // Render connections between items
+      connections?.forEach(({ item1, item2, color }) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(item1.x, item1.y);
+        ctx.lineTo(item2.x, item2.y);
+        ctx.stroke();
       });
 
       ctx.restore();
@@ -79,8 +103,8 @@ const Canvas: React.FC = () => {
     if (!ctx) return;
 
     // Render canvas content
-    renderCanvas(ctx, items, offsetX, offsetY, scale);
-  }, [items, offsetX, offsetY, scale, renderCanvas]);
+    renderCanvas(ctx, items, connections, offsetX, offsetY, scale);
+  }, [items, connections, offsetX, offsetY, scale, renderCanvas]);
 
   // Handle panning (dragging) based on wheel event without Ctrl key
   const handlePanning = useCallback((event: WheelEvent) => {
@@ -119,7 +143,7 @@ const Canvas: React.FC = () => {
 
     // early exit if mousedown on an existing element
     if (isConnection) {
-      isConnection = false;
+      setIsConnection(false);
       return;
     }
 
@@ -143,8 +167,6 @@ const Canvas: React.FC = () => {
     setItems((prevItems) => [...prevItems, newItem]);
   };
 
-  let isConnection = false;
-  let startConnectionItem: CanvasItem | null = null;
   const startConnection = (
     event: React.MouseEvent<HTMLCanvasElement, MouseEvent>
   ) => {
@@ -157,10 +179,8 @@ const Canvas: React.FC = () => {
     const x = (event.clientX - canvasCoords.left - offsetX) / scale;
     const y = (event.clientY - canvasCoords.top - offsetY) / scale;
 
-    console.log(x, y);
-
     // Check if the click is on an existing item
-    startConnectionItem = items.find((item) => {
+    const startConnectionItem = items.find((item) => {
       return (
         x >= item.x &&
         x <= item.x + item.width &&
@@ -170,7 +190,8 @@ const Canvas: React.FC = () => {
     });
 
     if (startConnectionItem) {
-      isConnection = true;
+      setIsConnection(true);
+      setStartConnectionItem(startConnectionItem);
       console.log("Clicked on item: ", startConnectionItem);
     }
   };
@@ -180,7 +201,6 @@ const Canvas: React.FC = () => {
   ) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    if (!isConnection) return;
 
     const canvasCoords = canvas.getBoundingClientRect();
 
@@ -199,31 +219,42 @@ const Canvas: React.FC = () => {
     });
 
     if (endConnectionItem) {
+      setIsConnection(true);
       console.log("Connected to item: ", endConnectionItem);
-      // Draw a line between the two items
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
 
-      ctx.save();
-      ctx.translate(offsetX, offsetY);
-      ctx.scale(scale, scale);
+      // stop duplicate connections
+      if (connectionsDupeCheck(startConnectionItem, endConnectionItem)) {
+        console.log("Connection already exists");
+        return;
+      }
 
-      ctx.strokeStyle = outlineColor;
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.moveTo(
-        startConnectionItem.x + startConnectionItem.width / 2,
-        startConnectionItem.y + startConnectionItem.height / 2
-      );
-      ctx.lineTo(
-        endConnectionItem.x + endConnectionItem.width / 2,
-        endConnectionItem.y + endConnectionItem.height / 2
-      );
-      ctx.stroke();
-
-      ctx.restore();
+      setConnections((prevConnections) => [
+        ...prevConnections,
+        {
+          item1: startConnectionItem,
+          item2: endConnectionItem,
+          color: connectionColor,
+        },
+      ]);
     }
   };
+
+  function connectionsDupeCheck(item1: CanvasItem, item2: CanvasItem) {
+    return connections.some((connection) => {
+      // check x and y coordinates of both items
+      // check reverse connection too
+      return (
+        (connection.item1.x === item1.x &&
+          connection.item1.y === item1.y &&
+          connection.item2.x === item2.x &&
+          connection.item2.y === item2.y) ||
+        (connection.item1.x === item2.x &&
+          connection.item1.y === item2.y &&
+          connection.item2.x === item1.x &&
+          connection.item2.y === item1.y)
+      );
+    });
+  }
 
   return (
     <canvas
