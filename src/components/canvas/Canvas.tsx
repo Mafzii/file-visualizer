@@ -14,8 +14,8 @@ interface Connection {
   item1: CanvasItem;
   item2: CanvasItem;
   color: string;
-  side1?: string;
-  side2?: string;
+  side1: string;
+  side2: string;
 }
 
 // use memoization on the items coming from the parent component
@@ -37,7 +37,7 @@ const Canvas: React.FC = () => {
   const boxColor = "#4f46e5";
   const circleColor = "#f43f5e";
   const outlineColor = "#d1d5db";
-  const connectionColor = "#f43f5e";
+  const connectionColor = "#d1d5db";
 
   // Initial setup of canvas dimensions and offsets
   useEffect(() => {
@@ -80,12 +80,17 @@ const Canvas: React.FC = () => {
       });
 
       // Render connections between items
-      connections?.forEach(({ item1, item2, color }) => {
+      connections?.forEach(({ item1, item2, color, side1, side2 }) => {
         ctx.strokeStyle = color;
         ctx.lineWidth = 5;
         ctx.beginPath();
-        ctx.moveTo(item1.x, item1.y);
-        ctx.lineTo(item2.x, item2.y);
+        // adjust the connection for the sides to connect to
+        const { x: x1, y: y1 } = getCoordinatesBasedOnSide(item1, side1);
+        const { x: x2, y: y2 } = getCoordinatesBasedOnSide(item2, side2);
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+
+
         ctx.stroke();
       });
 
@@ -228,18 +233,40 @@ const Canvas: React.FC = () => {
         return;
       }
 
+      const { side1, side2 } = getConnectionSides(
+        startConnectionItem,
+        endConnectionItem
+      );
+
       setConnections((prevConnections) => [
         ...prevConnections,
         {
           item1: startConnectionItem,
           item2: endConnectionItem,
           color: connectionColor,
+          side1,
+          side2,
         },
       ]);
     }
   };
 
-  function connectionsDupeCheck(item1: CanvasItem, item2: CanvasItem) {
+  const getConnectionSides = (start: CanvasItem, end: CanvasItem) => {
+    // calculate the side of the item to connect to
+    // based on the position of the items
+    // return the side of each item to connect to
+    const startCenterX = start.x + start.width / 2;
+    const startCenterY = start.y + start.height / 2;
+    const endCenterX = end.x + end.width / 2;
+    const endCenterY = end.y + end.height / 2;
+
+    if (startCenterX < endCenterX) return { side1: "right", side2: "left" };
+    if (startCenterX > endCenterX) return { side1: "left", side2: "right" };
+    if (startCenterY < endCenterY) return { side1: "bottom", side2: "top" };
+    if (startCenterY > endCenterY) return { side1: "top", side2: "bottom" };
+  };
+
+  const connectionsDupeCheck = (item1: CanvasItem, item2: CanvasItem) => {
     return connections.some((connection) => {
       // check x and y coordinates of both items
       // check reverse connection too
@@ -254,7 +281,24 @@ const Canvas: React.FC = () => {
           connection.item2.y === item1.y)
       );
     });
-  }
+  };
+
+  const getCoordinatesBasedOnSide = (item: CanvasItem, side: string) => {
+    // calculate the coordinates based on the side of the item
+    // return the x and y coordinates based on the side
+    switch (side) {
+      case "top":
+        return { x: item.x + item.width / 2, y: item.y };
+      case "bottom":
+        return { x: item.x + item.width / 2, y: item.y + item.height };
+      case "left":
+        return { x: item.x, y: item.y + item.height / 2 };
+      case "right":
+        return { x: item.x + item.width, y: item.y + item.height / 2 };
+      default:
+        return { x: item.x, y: item.y };
+    }
+  };
 
   return (
     <canvas
